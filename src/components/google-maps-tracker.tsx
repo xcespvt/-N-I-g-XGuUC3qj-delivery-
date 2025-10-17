@@ -34,9 +34,11 @@ const GoogleMapsTracker: React.FC<GoogleMapsTrackerProps> = ({
   currentLocation,
   stage
 }) => {
-  const { isLoaded } = useJsApiLoader({
+  const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: 'AIzaSyAU2Rh9JljXzGtpUREn7dWkc1Hckj2LnGU'
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyAU2Rh9JljXzGtpUREn7dWkc1Hckj2LnGU',
+    libraries: ['geometry', 'drawing'],
+    version: 'weekly'
   });
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -82,22 +84,53 @@ const GoogleMapsTracker: React.FC<GoogleMapsTrackerProps> = ({
           destination: destination,
           waypoints: waypoints,
           travelMode: google.maps.TravelMode.DRIVING,
+          avoidHighways: false,
+          avoidTolls: false,
         },
         (result, status) => {
           if (status === google.maps.DirectionsStatus.OK && result) {
             setDirectionsResponse(result);
+          } else {
+            console.warn('Directions request failed due to ' + status);
+            // Clear any existing directions on failure
+            setDirectionsResponse(null);
           }
         }
       );
     }
   }, [isLoaded, map, restaurantLocation, customerLocation, currentLocation, stage]);
 
+  // Handle loading error
+  if (loadError) {
+    return (
+      <div className="flex items-center justify-center h-full bg-muted">
+        <div className="text-center p-4">
+          <div className="text-red-500 mb-2">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <p className="text-sm text-muted-foreground mb-2">Failed to load map</p>
+          <p className="text-xs text-muted-foreground">Please check your internet connection</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle loading state
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center h-full bg-muted">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
           <p className="text-sm text-muted-foreground">Loading map...</p>
+          <p className="text-xs text-muted-foreground mt-1">This may take a moment on mobile</p>
         </div>
       </div>
     );
@@ -118,6 +151,9 @@ const GoogleMapsTracker: React.FC<GoogleMapsTrackerProps> = ({
         streetViewControl: false,
         rotateControl: false,
         fullscreenControl: false,
+        gestureHandling: 'greedy', // Better for mobile
+        clickableIcons: false,
+        keyboardShortcuts: false,
         styles: [
           {
             featureType: 'poi',
