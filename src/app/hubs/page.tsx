@@ -48,7 +48,7 @@ export default function HubsPage() {
         <Card className="overflow-hidden transition-all duration-300">
             <div className="relative h-48 w-full">
                  <Image 
-                    src="https://placehold.co/600x400.png"
+                    src="https://picsum.photos/seed/city-map/600/400"
                     alt="Map of hubs"
                     layout="fill"
                     objectFit="cover"

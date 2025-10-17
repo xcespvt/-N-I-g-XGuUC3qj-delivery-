@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -73,7 +73,7 @@ const SettlementItem = ({ settlement }: { settlement: Settlement }) => (
   </div>
 );
 
-export default function EarningsPage() {
+function EarningsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [floatingCashDetails, setFloatingCashDetails] = useState(initialFloatingCashDetails);
@@ -462,5 +462,27 @@ export default function EarningsPage() {
       </main>
       <BottomNav />
     </div>
+  );
+}
+
+export default function EarningsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen w-full flex-col bg-muted/40 pb-20">
+        <main className="flex flex-1 flex-col gap-4 p-4">
+          <div className="animate-pulse">
+            <div className="h-32 bg-muted rounded-lg mb-4"></div>
+            <div className="h-8 bg-muted rounded mb-4"></div>
+            <div className="space-y-4">
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+              <div className="h-24 bg-muted rounded"></div>
+            </div>
+          </div>
+        </main>
+      </div>
+    }>
+      <EarningsContent />
+    </Suspense>
   );
 }

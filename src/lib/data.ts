@@ -36,7 +36,11 @@ const defaultEarningsBreakdown = {
 export const deliveries: Delivery[] = [
   {
     id: 'ORD-001',
-    customer: { name: 'Rahul S.', avatarUrl: 'https://placehold.co/40x40.png' },
+    customer: { 
+      name: 'Rahul S.', 
+      avatarUrl: 'https://placehold.co/40x40.png',
+      instructions: "Please don't ring the bell. Leave the order at the door."
+    },
     destination: 'Apartment 4B, Green View, HSR Layout',
     earnings: 177.00,
     distance: 6.8,
@@ -49,7 +53,13 @@ export const deliveries: Delivery[] = [
         address: '123 Food Street, Koramangala',
         avatarUrl: 'https://placehold.co/40x40.png',
         distance: 2.3,
-        time: 15
+        time: 15,
+        navigationUrl: '/orders/ORD-001/track',
+        coordinates: { lat: 12.9279, lng: 77.6271 }
+    },
+    customerLocation: {
+        coordinates: { lat: 12.9116, lng: 77.6648 },
+        address: 'Apartment 4B, Green View, HSR Layout'
     },
     orderItems: [
         { name: 'Chicken Biryani', quantity: 1, price: 250 },
@@ -74,7 +84,11 @@ export const deliveries: Delivery[] = [
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     status: 'Delivered',
     stage: 'Complete',
-    restaurant: { ...defaultRestaurant, name: 'Pizza Palace' },
+    restaurant: { ...defaultRestaurant, name: 'Pizza Palace', navigationUrl: '/orders/ORD-002/track', coordinates: { lat: 12.9352, lng: 77.6245 } },
+    customerLocation: {
+        coordinates: { lat: 12.9698, lng: 77.7500 },
+        address: '789 Pine St, Metropolis'
+    },
     orderItems: [{ name: 'Margherita Pizza', quantity: 1, price: 300 }],
     earningsBreakdown: { basePay: 20, distancePay: 100, commission: 30, total: 150 }
   },
@@ -88,7 +102,11 @@ export const deliveries: Delivery[] = [
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     status: 'Delivered',
     stage: 'Complete',
-    restaurant: { ...defaultRestaurant, name: 'Sushi Central' },
+    restaurant: { ...defaultRestaurant, name: 'Sushi Central', navigationUrl: '/orders/ORD-003/track', coordinates: { lat: 12.9716, lng: 77.5946 } },
+    customerLocation: {
+        coordinates: { lat: 12.9800, lng: 77.6000 },
+        address: '101 Maple Dr, Gotham'
+    },
     orderItems: [{ name: 'California Roll', quantity: 2, price: 150 }],
     earningsBreakdown: { basePay: 15, distancePay: 62, commission: 20, total: 97 }
   },
@@ -102,7 +120,11 @@ export const deliveries: Delivery[] = [
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(),
     status: 'Cancelled',
     stage: 'Cancelled',
-    restaurant: { ...defaultRestaurant, name: 'Taco Town' },
+    restaurant: { ...defaultRestaurant, name: 'Taco Town', navigationUrl: '/orders/ORD-004/track', coordinates: { lat: 12.9500, lng: 77.6000 } },
+    customerLocation: {
+        coordinates: { lat: 12.9200, lng: 77.5800 },
+        address: '222 Birch Ln, Star City'
+    },
     orderItems: [{ name: 'Beef Taco', quantity: 3, price: 90 }],
     earningsBreakdown: { basePay: 0, distancePay: 0, commission: 0, total: 0 }
   },
@@ -719,3 +741,5 @@ export const achievementsData: Achievement[] = [
     { id: 'top-earner', name: 'Top Earner', description: 'Earn over ₹10,000 in a single week.', icon: TrendingUp, achieved: false, progress: 60 },
     { id: 'loyal-partner', name: 'Loyal Partner', description: 'Complete 1 year with Crevings.', icon: Heart, achieved: false, progress: 25 },
 ];
+
+    

@@ -8,8 +8,9 @@ import { deliveries } from '@/lib/data';
 import type { Delivery } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
 
-import { ArrowLeft, Clock, MapPin, MoreVertical, Navigation, Phone, Package, Building, User, CheckCircle, Headset, MessageSquare, Camera, Truck, Star } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, MoreVertical, Navigation, Phone, Package, Building, User, CheckCircle, Headset, MessageSquare, Camera, Truck, Star, Info, Loader2 } from 'lucide-react';
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,27 +21,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
+import Link from 'next/link';
 
-const ContactActionCard = ({ title, icon: Icon, name, address, distance, time, avatarUrl, avatarFallback }: {
+const ContactActionCard = ({ title, icon: Icon, name, address, distance, time, avatarUrl, avatarFallback, navigationUrl }: {
   title: string;
   icon: React.ElementType;
   name: string;
@@ -49,8 +41,9 @@ const ContactActionCard = ({ title, icon: Icon, name, address, distance, time, a
   time: number;
   avatarUrl: string;
   avatarFallback: string;
+  navigationUrl: string;
 }) => {
-    const handleAction = (action: 'Call' | 'Navigate') => {
+    const handleAction = (action: 'Call') => {
         // This is a placeholder for the call/navigate functionality.
     }
 
@@ -78,9 +71,11 @@ const ContactActionCard = ({ title, icon: Icon, name, address, distance, time, a
                 <Button variant="outline" className="w-full" onClick={() => handleAction('Call')}>
                     <Phone className="mr-2 h-4 w-4" /> Call
                 </Button>
-                <Button className="w-full" onClick={() => handleAction('Navigate')}>
-                    <Navigation className="mr-2 h-4 w-4" /> Navigate
-                </Button>
+                <Link href={navigationUrl} className="w-full">
+                  <Button className="w-full">
+                      <Navigation className="mr-2 h-4 w-4" /> Navigate
+                  </Button>
+                </Link>
             </div>
             </CardContent>
         </Card>
@@ -96,14 +91,17 @@ export default function OrderDetailsPage() {
     order?.status === 'Cancelled' ? 'Cancelled' : order?.stage || 'Pickup'
   );
   const [stageTimestamps, setStageTimestamps] = useState<{ [key: string]: string | null }>({});
-  const [isPickupDialogOpen, setIsPickupDialogOpen] = useState(false);
+  const [isPickupSheetOpen, setIsPickupSheetOpen] = useState(false);
   const [pickupPhoto, setPickupPhoto] = useState<File | null>(null);
-  const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
-  const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false);
+  const [isDeliverySheetOpen, setIsDeliverySheetOpen] = useState(false);
+  const [isFeedbackSheetOpen, setIsFeedbackSheetOpen] = useState(false);
   const [restaurantRating, setRestaurantRating] = useState(0);
   const [customerRating, setCustomerRating] = useState(0);
   const [restaurantComment, setRestaurantComment] = useState("");
   const [customerComment, setCustomerComment] = useState("");
+  const [isSupportSheetOpen, setIsSupportSheetOpen] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [isOrderCompleteScreenVisible, setIsOrderCompleteScreenVisible] = useState(false);
 
   if (!order) {
     notFound();
@@ -113,7 +111,7 @@ export default function OrderDetailsPage() {
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setStageTimestamps(prev => ({ ...prev, PickedUp: now }));
     setCurrentStage('PickedUp');
-    setIsPickupDialogOpen(false);
+    setIsPickupSheetOpen(false);
     setPickupPhoto(null);
   };
 
@@ -121,14 +119,16 @@ export default function OrderDetailsPage() {
     const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     setStageTimestamps(prev => ({ ...prev, Complete: now }));
     setCurrentStage('Complete');
-    setIsDeliveryDialogOpen(false);
-    setIsFeedbackDialogOpen(true);
+    setIsDeliverySheetOpen(false);
+    setIsFeedbackSheetOpen(true);
   };
   
   const handleFeedbackSubmit = () => {
-    setIsFeedbackDialogOpen(false);
+    setIsFeedbackSheetOpen(false);
+    setIsSubmittingFeedback(true);
     setTimeout(() => {
-        router.push('/');
+        setIsSubmittingFeedback(false);
+        setIsOrderCompleteScreenVisible(true);
     }, 1500);
   };
 
@@ -157,14 +157,14 @@ export default function OrderDetailsPage() {
             setStageTimestamps(prev => ({ ...prev, AtRestaurant: now }));
             break;
         case 'AtRestaurant':
-            setIsPickupDialogOpen(true);
+            setIsPickupSheetOpen(true);
             break;
         case 'PickedUp':
             setCurrentStage('AtCustomer');
             setStageTimestamps(prev => ({ ...prev, AtCustomer: now }));
             break;
         case 'AtCustomer':
-            setIsDeliveryDialogOpen(true);
+            setIsDeliverySheetOpen(true);
             break;
         default:
             break;
@@ -187,6 +187,42 @@ export default function OrderDetailsPage() {
     'Cancelled': -1,
   };
   const currentStageIndex = stageMap[currentStage];
+  
+    if (isSubmittingFeedback) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Finalizing your earnings...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isOrderCompleteScreenVisible) {
+    return (
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-muted/40 p-4 text-center">
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        >
+          <CheckCircle className="h-24 w-24 text-green-500" />
+        </motion.div>
+        <h1 className="mt-6 text-2xl font-bold">Congratulations!</h1>
+        {order && (
+            <p className="mt-2 text-lg text-muted-foreground">
+                You earned{' '}
+                <span className="font-bold text-primary">₹{order.earnings.toFixed(2)}</span> on this order.
+            </p>
+        )}
+        <Button size="lg" className="mt-8" onClick={() => router.push('/home')}>
+          Back to Home
+        </Button>
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/40">
@@ -196,23 +232,23 @@ export default function OrderDetailsPage() {
           <span className="sr-only">Back to Orders</span>
         </Button>
         <h1 className="text-lg font-semibold">Order #{order.id}</h1>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
+        <Sheet open={isSupportSheetOpen} onOpenChange={setIsSupportSheetOpen}>
+          <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Headset className="h-5 w-5" />
               <span className="sr-only">Support</span>
             </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="rounded-t-3xl">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-2">
                 <Headset className="h-8 w-8 text-primary" />
             </div>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Contact Support</AlertDialogTitle>
-              <AlertDialogDescription>
+            <SheetHeader className="text-center">
+              <SheetTitle>Contact Support</SheetTitle>
+              <SheetDescription>
                 How can we help you with this order?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+              </SheetDescription>
+            </SheetHeader>
             <div className="grid gap-3 my-4">
               <Button variant="outline" className="w-full justify-start h-12 text-base" onClick={handleCallSupport}>
                   <Phone className="mr-3 h-5 w-5" /> Call Agent
@@ -221,11 +257,13 @@ export default function OrderDetailsPage() {
                   <MessageSquare className="mr-3 h-5 w-5" /> Chat with Agent
               </Button>
             </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            <SheetFooter>
+              <SheetClose asChild>
+                <Button>Cancel</Button>
+              </SheetClose>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
       </header>
 
       <main className="flex-1 space-y-4 p-4 pb-36">
@@ -255,6 +293,7 @@ export default function OrderDetailsPage() {
           time={order.restaurant.time}
           avatarUrl={order.restaurant.avatarUrl}
           avatarFallback={order.restaurant.name.charAt(0)}
+          navigationUrl={`/orders/${order.id}/track`}
         />
         
         <ContactActionCard
@@ -266,7 +305,20 @@ export default function OrderDetailsPage() {
           time={order.estimatedTime - order.restaurant.time}
           avatarUrl={order.customer.avatarUrl}
           avatarFallback={order.customer.name.charAt(0)}
+          navigationUrl={`/orders/${order.id}/track`}
         />
+
+        {order.customer.instructions && (
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Info className="h-5 w-5 text-primary" />
+                Customer Instructions
+              </h3>
+              <p className="text-muted-foreground mt-2">{order.customer.instructions}</p>
+            </CardContent>
+          </Card>
+        )}
         
         <Card>
           <Accordion type="single" collapsible className="w-full">
@@ -282,7 +334,6 @@ export default function OrderDetailsPage() {
                   {order.orderItems.map(item => (
                     <div key={item.name} className="flex justify-between text-muted-foreground">
                       <span>{item.quantity} x {item.name}</span>
-                      <span>₹{(item.quantity * item.price).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -387,14 +438,14 @@ export default function OrderDetailsPage() {
           </Button>
       </div>
 
-      <Dialog open={isPickupDialogOpen} onOpenChange={setIsPickupDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Pickup</DialogTitle>
-            <DialogDescription>
+      <Sheet open={isPickupSheetOpen} onOpenChange={setIsPickupSheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle>Confirm Pickup</SheetTitle>
+            <SheetDescription>
               Please enter the OTP from the restaurant and upload a photo of the packed food to confirm pickup.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="otp">Restaurant OTP</Label>
@@ -414,42 +465,46 @@ export default function OrderDetailsPage() {
               </Label>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPickupDialogOpen(false)}>Cancel</Button>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
             <Button onClick={handleConfirmPickup}>Confirm & Proceed</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       
-      <Dialog open={isDeliveryDialogOpen} onOpenChange={setIsDeliveryDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Delivery</DialogTitle>
-            <DialogDescription>
+      <Sheet open={isDeliverySheetOpen} onOpenChange={setIsDeliverySheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle>Confirm Delivery</SheetTitle>
+            <SheetDescription>
               Please enter the 6-digit OTP from the customer to confirm delivery.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="customer-otp">Customer OTP</Label>
               <Input id="customer-otp" placeholder="Enter 6-digit OTP" maxLength={6} type="tel" pattern="\d{6}" />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeliveryDialogOpen(false)}>Cancel</Button>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
             <Button onClick={handleConfirmDelivery}>Confirm Delivery</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
       
-      <Dialog open={isFeedbackDialogOpen} onOpenChange={setIsFeedbackDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Leave Feedback</DialogTitle>
-            <DialogDescription>
+      <Sheet open={isFeedbackSheetOpen} onOpenChange={setIsFeedbackSheetOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl">
+          <SheetHeader>
+            <SheetTitle>Leave Feedback</SheetTitle>
+            <SheetDescription>
               Your feedback helps us improve the experience for everyone.
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
           <div className="grid gap-6 py-4">
             <div className="space-y-3">
               <h4 className="font-semibold text-foreground">Rate the Restaurant: {order.restaurant.name}</h4>
@@ -493,15 +548,17 @@ export default function OrderDetailsPage() {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsFeedbackDialogOpen(false);
-              router.push('/');
-            }}>Skip</Button>
+          <SheetFooter>
+            <SheetClose asChild>
+              <Button variant="outline" onClick={() => {
+                setIsFeedbackSheetOpen(false);
+                router.push('/');
+              }}>Skip</Button>
+            </SheetClose>
             <Button onClick={handleFeedbackSubmit}>Submit Feedback</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
     </div>
   );

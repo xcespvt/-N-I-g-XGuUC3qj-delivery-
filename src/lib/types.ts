@@ -28,6 +28,11 @@ export interface Restaurant {
     avatarUrl: string;
     distance: number; // in km
     time: number; // in mins
+    navigationUrl: string;
+    coordinates?: {
+        lat: number;
+        lng: number;
+    };
 }
 
 export interface Delivery {
@@ -35,6 +40,7 @@ export interface Delivery {
   customer: {
     name: string;
     avatarUrl: string;
+    instructions?: string;
   };
   destination: string;
   earnings: number;
@@ -43,6 +49,13 @@ export interface Delivery {
   status: 'In-progress' | 'Delivered' | 'Cancelled';
   stage: 'Pickup' | 'AtRestaurant' | 'PickedUp' | 'AtCustomer' | 'Complete' | 'Cancelled';
   restaurant: Restaurant;
+  customerLocation?: {
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+    address: string;
+  };
   orderItems: OrderItem[];
   earningsBreakdown: EarningsBreakdown;
   estimatedTime: number; // in minutes
@@ -266,3 +279,5 @@ export interface MedicineReimbursement {
     status: 'Approved' | 'Pending' | 'Rejected';
     reimbursedAmount: number;
 }
+
+    

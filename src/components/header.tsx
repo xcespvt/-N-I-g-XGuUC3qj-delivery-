@@ -17,14 +17,19 @@ export default function Header() {
           <span className="sr-only">Toggle theme</span>
       </Button>
       
-      <div className="relative">
-        <Link href="/notifications">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Toggle notifications</span>
-          </Button>
-          <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-xs font-bold text-white pointer-events-none">3</span>
+      <div className="flex items-center gap-2">
+        <Link href="/rate-card" passHref>
+          <Button variant="default" size="sm">Rate Card</Button>
         </Link>
+        <div className="relative">
+          <Link href="/notifications">
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Bell className="h-5 w-5" />
+              <span className="sr-only">Toggle notifications</span>
+            </Button>
+            <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-xs font-bold text-white pointer-events-none">3</span>
+          </Link>
+        </div>
       </div>
     </header>
   );
